@@ -39,5 +39,15 @@ namespace JobManager.Server.DataServices
 
             return entities;
         }
+
+        public async Task UpdateStatus(Guid id, JobStatus status)
+        {
+            var entity = await context.Jobs.FirstAsync(x => x.Id == id);
+
+            entity.Status = status;
+            entity.Updated = DateTime.UtcNow;
+
+            await context.SaveChangesAsync();
+        }
     }
 }

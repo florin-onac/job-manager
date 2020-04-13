@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using JobManager.Server.Domain;
 
@@ -9,5 +10,7 @@ namespace JobManager.Server.DataServices
         Task<Job> Add(Job job);
 
         Task<IEnumerable<Job>> GetAll(JobStatus status);
+
+        Task UpdateStatus(Guid id, JobStatus status);
     }
 }

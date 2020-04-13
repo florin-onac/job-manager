@@ -1,8 +1,10 @@
 using System.Net;
 using AutoMapper;
+using JobManager.Server.AppServices;
 using JobManager.Server.Configuration.Mapper;
 using JobManager.Server.Database;
 using JobManager.Server.DataServices;
+using JobManager.Server.Quartz;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
@@ -14,6 +16,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
 
 namespace JobManager.Server
 {
@@ -55,14 +60,19 @@ namespace JobManager.Server
 
             services.AddHealthChecks();
 
+            services.AddHostedService<QuartzService>();
+
             services.AddAutoMapper(typeof(MapperProfile));
 
             services.AddDbContext<JobManDbContext>(
-                x => x.UseSqlServer(Configuration.GetConnectionString("JobManDb")));
+                x =>
+                x.UseSqlServer(Configuration.GetConnectionString("JobManDb")));
 
             ConfigureDataServices(services);
             ConfigureAppServices(services);
             ConfigureServicesForSwagger(services);
+
+            ConfigureQuartzServices(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -126,10 +136,23 @@ namespace JobManager.Server
         private void ConfigureDataServices(IServiceCollection services)
         {
             services.AddScoped<IJobDataService, JobDataService>();
+            services.AddScoped<IOrderDataService, OrderDataService>();
         }
 
         private void ConfigureAppServices(IServiceCollection services)
         {
+            services.AddScoped<IJobProcessor, OrderExporter>();
+            services.AddScoped<IJobProcessor, OrderImporter>();
+        }
+
+        private void ConfigureQuartzServices(IServiceCollection services)
+        {
+            services.AddSingleton<IJobFactory, JobFactory>();
+            services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+
+            services.AddScoped<JobRunner>();
+
+            services.AddSingleton(new JobSchedule(typeof(JobRunner), Configuration["JobRunner:CronExpression"]));
         }
 
         private void ConfigureServicesForSwagger(IServiceCollection services)

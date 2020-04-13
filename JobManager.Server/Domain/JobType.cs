@@ -2,6 +2,7 @@
 {
     public enum JobType
     {
-        Default = 0
+        OrderImporter = 1,
+        OrderExporter
     }
 }
